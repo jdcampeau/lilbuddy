@@ -1,4 +1,5 @@
 import os
+from google.genai import types
 import subprocess
 from pathlib import Path
 
@@ -42,3 +43,17 @@ def run_python_file(working_directory, file_path, args=[]):
     
     except Exception as e:
         return f"Error: executing Python file: {e}"
+
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Run a specified file, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The file path is the file to run. If it does not exist or si outside the working directory, return the apppropriate error given in the function itself.",
+            ),
+        },
+    ),
+)
