@@ -34,7 +34,20 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    generate_content(client, messages, verbose)
+    iterations = 0
+
+    while iterations < 20:
+        iterations += 1
+        try:
+            generate_content(client, messages, verbose)
+            if response.text:
+                iterations += 20
+                print(response.text)
+        except Exception as e:
+            iterations += 20
+            print(f"An unexpected error has occurred: {e}")
+
+
 
 def generate_content(client, messages, verbose):
     response = client.models.generate_content(
@@ -45,9 +58,10 @@ def generate_content(client, messages, verbose):
             )
     )
 
-    print(response.candidates)
+    
     for candidate in response.candidates:
         messages.append(candidate.content)
+    
 
 
     if verbose:
@@ -72,6 +86,10 @@ def generate_content(client, messages, verbose):
 
     if not function_responses:
         raise Exception("no function responses generated, exiting.")
+
+    func_responses = types.Content(role="user", parts=[types.Part(text=function_responses)])
+
+    messages.append(func_responses)
 
 
 if __name__ == "__main__":
