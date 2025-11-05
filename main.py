@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from system_prompt import system_prompt
 from available_functions import available_functions, call_function
+from config import MAXLOOPS
 
 def main():
     load_dotenv()
@@ -34,17 +35,20 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    iterations = 0
-
-    while iterations < 20:
-        iterations += 1
+    loops = 0
+    while True:
+        loops += 1
+        if loops > MAXLOOPS:
+            print("Maximum allowed iterations reached.")
+            sys.exit(1)
         try:
-            generate_content(client, messages, verbose)
-            if response.text:
-                iterations += 20
-                print(response.text)
+            func_response = generate_content(client, messages, verbose)
+            if func_response:
+                print("Response")
+                print(func_response)
+                break
         except Exception as e:
-            iterations += 20
+            loops += 20
             print(f"An unexpected error has occurred: {e}")
 
 
@@ -68,7 +72,11 @@ def generate_content(client, messages, verbose):
         print("Prompt tokens:", response.usage_metadata.prompt_token_count)
         print("Response tokens:", response.usage_metadata.candidates_token_count)
 
-    print("Response:")
+    if response.candidates:
+        for candidate in response.candidates:
+            function_call_content = candidate.content
+            messages.append(function_call_content)
+
     if not response.function_calls:
         return response.text
 
@@ -87,9 +95,8 @@ def generate_content(client, messages, verbose):
     if not function_responses:
         raise Exception("no function responses generated, exiting.")
 
-    func_responses = types.Content(role="user", parts=[types.Part(text=function_responses)])
+    messages.append(types.Content(role="user", parts=function_responses))
 
-    messages.append(func_responses)
 
 
 if __name__ == "__main__":
